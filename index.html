@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Imagen con Animación, Ola, Corazones y Audio</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .frame {
+      width: min(1000px, 95%);
+      max-height: 95%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+      place-items: center;
+      text-align: center;
+      animation: fadeInFrame 0.8s ease forwards;
+      z-index: 1;
+      position: relative;
+    }
+
+    img {
+      max-width: 100%;
+      max-height: calc(100vh - 220px);
+      border-radius: 8px;
+      object-fit: contain;
+      display: block;
+      opacity: 0;
+      transform: scale(0.9);
+      animation: zoomFade 1.2s ease forwards;
+    }
+
+    h1, p {
+      margin: 10px 0 0;
+      opacity: 0;
+    }
+
+    h1 {
+      color: #fff;
+      font-size: 1.8rem;
+      animation: fadeInText 1s ease forwards;
+      animation-delay: 1.3s; 
+    }
+
+    p {
+      color: #ccc;
+      font-size: 1rem;
+      max-width: 80%;
+      line-height: 1.5;
+      animation: fadeInText 1s ease forwards;
+      animation-delay: 1.6s; 
+    }
+
+    @keyframes zoomFade {
+      from { opacity: 0; transform: scale(0.9); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes fadeInText {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInFrame {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .wave span {
+      display: inline-block;
+      animation: wave 2s ease-in-out infinite;
+    }
+
+    @keyframes wave {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-10px); }
+    }
+
+    #hearts-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 5; /* ahora encima de la imagen y textos */
+    }
+
+    .heart {
+      position: absolute;
+      opacity: 0.9;
+      animation: floatUp 4s linear forwards;
+      text-shadow: 0 2px 6px rgba(0,0,0,0.35);
+      will-change: transform, opacity;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 0.9; }
+      50% { transform: translateY(-60px) scale(1.3); opacity: 1; }
+      100% { transform: translateY(-220px) scale(0.8); opacity: 0; }
+    }
+
+    /* overlay para pedir interacción si autoplay está bloqueado */
+    #playOverlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      background: rgba(0,0,0,0.45);
+      backdrop-filter: blur(4px);
+      color: #fff;
+      flex-direction: column;
+      gap: 12px;
+      visibility: hidden; /* se muestra solo si es necesario */
+      opacity: 0;
+      transition: opacity .2s ease, visibility .2s;
+    }
+    #playOverlay.show { visibility: visible; opacity: 1; }
+
+    #playBtn {
+      background: linear-gradient(90deg,#ff6b9c,#ffb199);
+      border: none;
+      color: #111;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(255,107,156,0.15);
+    }
+    #playHint { font-size: 0.95rem; color: #eee; opacity: .95; }
+  </style>
+</head>
+<body>
+  <div class="frame" id="frame">
+    <div id="hearts-container"></div>
+    <img id="mainImage" src="caballerito.png" alt="Imagen" />
+    <h1 id="title" class="wave">ola como estas </h1>
+    <p id="subtitle" class="wave">te amo musho</p>
+  </div>
+
+  <!-- overlay que aparece solo si autoplay es bloqueado -->
+  <div id="playOverlay" aria-hidden="true">
+    <div id="playHint">El navegador bloqueó la reproducción automática.</div>
+    <button id="playBtn">Tocar audio</button>
+  </div>
+
+  <!-- audio -->
+  <audio id="backgroundAudio" src="larvas_hollow_knight.mp3" preload="auto" playsinline></audio>
+
+  <script>
+    // -- funciones de texto / ola --
+    function splitLetters(element) {
+      const text = element.textContent;
+      element.textContent = '';
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const span = document.createElement('span');
+        span.textContent = char === ' ' ? '\u00A0' : char;
+        span.style.animationDelay = `${i * 0.05}s`;
+        element.appendChild(span);
+      }
+    }
+    setTimeout(() => {
+      splitLetters(document.getElementById('title'));
+      splitLetters(document.getElementById('subtitle'));
+    }, 1600);
+
+    // -- corazones --
+    const colors = ['#4c2882', '#094293', '#333c87', '#0001ff', '#0000ff'];
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.textContent = '♥';
+      heart.style.color = colors[Math.floor(Math.random()*colors.length)];
+
+      const x = Math.random() * window.innerWidth;
+      const y = Math.random() * window.innerHeight * 0.6;
+      heart.style.left = `${x}px`;
+      heart.style.top = `${y}px`;
+
+      // tamaños variados
+      const size = 15 + Math.random() * 60;
+      heart.style.fontSize = size + 'px';
+
+      document.getElementById('hearts-container').appendChild(heart);
+      setTimeout(()=> heart.remove(), 4200);
+    }
+    // más corazones (cada 200ms)
+    setInterval(() => {
+      createHeart();
+      if (Math.random() > 0.6) createHeart(); // a veces salen dobles
+    }, 200);
+
+    // -- audio con autoplay + overlay --
+    const audio = document.getElementById('backgroundAudio');
+    const overlay = document.getElementById('playOverlay');
+    const playBtn = document.getElementById('playBtn');
+
+    function fadeInAudio(duration = 2000) {
+      audio.volume = 0;
+      const stepTime = 50;
+      const steps = Math.max(1, Math.floor(duration / stepTime));
+      const volStep = 1 / steps;
+      let current = 0;
+      const timer = setInterval(() => {
+        current++;
+        audio.volume = Math.min(1, volStep * current);
+        if (current >= steps) clearInterval(timer);
+      }, stepTime);
+    }
+
+    function tryAutoplay() {
+      if (!audio.paused && audio.currentTime > 0) {
+        fadeInAudio();
+        return Promise.resolve();
+      }
+      const prom = audio.play();
+      if (prom !== undefined) {
+        return prom.then(() => {
+          fadeInAudio();
+        }).catch(err => {
+          console.log('Autoplay bloqueado:', err);
+          showOverlay();
+          return Promise.reject(err);
+        });
+      } else {
+        showOverlay();
+        return Promise.reject(new Error('No Promise from play()'));
+      }
+    }
+
+    function showOverlay() {
+      overlay.classList.add('show');
+      overlay.setAttribute('aria-hidden', 'false');
+    }
+    function hideOverlay() {
+      overlay.classList.remove('show');
+      overlay.setAttribute('aria-hidden', 'true');
+    }
+
+    function userStartAudio() {
+      audio.currentTime = audio.currentTime || 0;
+      audio.play().then(() => {
+        fadeInAudio();
+        hideOverlay();
+      }).catch(err => {
+        console.error('No se pudo reproducir tras interacción:', err);
+      });
+    }
+
+    audio.addEventListener('ended', () => {
+      setTimeout(() => {
+        audio.currentTime = 0;
+        audio.play().then(() => {
+          fadeInAudio();
+        }).catch(err => {
+          console.log('Repetición bloqueada:', err);
+          showOverlay();
+        });
+      }, 500);
+    });
+
+    playBtn.addEventListener('click', () => {
+      userStartAudio();
+    });
+
+    window.addEventListener('load', () => {
+      tryAutoplay().catch(()=>{});
+    });
+
+    document.addEventListener('click', () => {
+      if (audio.paused) {
+        audio.play().then(() => {
+          fadeInAudio();
+          hideOverlay();
+        }).catch(()=>{});
+      }
+    }, { once: false, passive: true });
+
+    audio.addEventListener('error', (e) => {
+      console.error('Error cargando audio:', e);
+    });
+  </script>
+</body>
+</html>

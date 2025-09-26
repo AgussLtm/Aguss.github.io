@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Imagen con Animación, Ola y Corazones de Colores</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial;
+      background: #111;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .frame {
+      width: min(1000px, 95%);
+      max-height: 95%;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+      place-items: center;
+      text-align: center;
+      animation: fadeInFrame 0.8s ease forwards;
+      z-index: 1;
+      position: relative;
+    }
+
+    img {
+      max-width: 100%;
+      max-height: calc(100vh - 220px);
+      border-radius: 8px;
+      object-fit: contain;
+      display: block;
+      opacity: 0;
+      transform: scale(0.9);
+      animation: zoomFade 1.2s ease forwards;
+    }
+
+    h1, p {
+      margin: 10px 0 0;
+      opacity: 0;
+    }
+
+    h1 {
+      color: #fff;
+      font-size: 1.8rem;
+      animation: fadeInText 1s ease forwards;
+      animation-delay: 1.3s; 
+    }
+
+    p {
+      color: #ccc;
+      font-size: 1rem;
+      max-width: 80%;
+      line-height: 1.5;
+      animation: fadeInText 1s ease forwards;
+      animation-delay: 1.6s; 
+    }
+
+    .caption {
+      color: #ddd;
+      font-size: 0.9rem;
+      text-align: center;
+      opacity: 0;
+      animation: fadeInText 1s ease forwards;
+      animation-delay: 2s;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+      justify-content: center;
+    }
+
+    .btn {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      backdrop-filter: blur(3px);
+      transition: transform .12s ease, background .15s;
+    }
+    .btn:hover { 
+      transform: translateY(-2px) scale(1.02);
+      background: rgba(255,255,255,0.05);
+    }
+
+    /* Animaciones principales */
+    @keyframes zoomFade {
+      from { opacity: 0; transform: scale(0.9); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes fadeInText {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInFrame {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Animación de ola más lenta */
+    .wave span {
+      display: inline-block;
+      animation: wave 2s ease-in-out infinite;
+    }
+
+    @keyframes wave {
+      0%, 60%, 100% { transform: translateY(0); }
+      30% { transform: translateY(-10px); }
+    }
+
+    /* Contenedor de corazones */
+    #hearts-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .heart {
+      position: absolute;
+      opacity: 0.8;
+      animation: floatUp 4s linear forwards;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 0.8; }
+      50% { transform: translateY(-50px) scale(1.2); opacity: 1; }
+      100% { transform: translateY(-200px) scale(0.8); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div id="hearts-container"></div> <!-- Corazones -->
+
+  <div class="frame">
+    <!-- Imagen primero -->
+    <img id="mainImage" src="caballerito.png" alt="Imagen" />
+
+    <!-- Texto aparece después -->
+    <h1 id="title" class="wave">ola como tas</h1>
+    <p id="subtitle" class="wave">flores para ti</p>
+
+    <!-- Pie de imagen con botones -->
+    <div class="caption">
+      <div id="filename">foto.jpg</div>
+      <div class="controls">
+        <button class="btn" id="openBtn">Abrir en pestaña nueva</button>
+        <button class="btn" id="downloadBtn">Descargar imagen</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Abrir/descargar imagen
+    const img = document.getElementById('mainImage');
+    const openBtn = document.getElementById('openBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const src = img.getAttribute('src');
+    document.getElementById('filename').textContent = src.split('/').pop();
+
+    openBtn.addEventListener('click', () => window.open(src, '_blank'));
+    downloadBtn.addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = src;
+      a.download = src.split('/').pop();
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+
+    // Dividir texto en spans para ola (mantener espacios)
+    function splitLetters(element) {
+      const text = element.textContent;
+      element.textContent = '';
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const span = document.createElement('span');
+        span.textContent = char === ' ' ? '\u00A0' : char;
+        span.style.animationDelay = `${i * 0.05}s`;
+        element.appendChild(span);
+      }
+    }
+
+    // Aplicar ola después de la aparición de los textos
+    setTimeout(() => {
+      splitLetters(document.getElementById('title'));
+      splitLetters(document.getElementById('subtitle'));
+    }, 1600);
+
+    // Colores de los corazones
+    const colors = ['white', 'pink', 'black', 'purple', 'blue'];
+
+    // Crear corazones flotando cerca de la imagen con color aleatorio
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.className = 'heart';
+      heart.textContent = '♥';
+      heart.style.color = colors[Math.floor(Math.random() * colors.length)];
+
+      // Horizontal aleatoria
+      heart.style.left = Math.random() * 60 + 20 + 'vw';
+      // Vertical cerca del centro de la pantalla
+      heart.style.top = (window.innerHeight / 2 + (Math.random() * 40 - 20)) + 'px';
+      // Tamaño más grande
+      heart.style.fontSize = (20 + Math.random() * 30) + 'px';
+
+      document.getElementById('hearts-container').appendChild(heart);
+      setTimeout(() => heart.remove(), 4000);
+    }
+
+    // Generar corazones cada 300ms
+    setInterval(createHeart, 300);
+  </script>
+</body>
+</html>
